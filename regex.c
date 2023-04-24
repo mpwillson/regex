@@ -1,22 +1,19 @@
 /*
- * 	NAME
+ *  NAME
  *    regex - janet wrappers for POSIX regex routines
  *
- * 	SYNOPSIS
+ *  SYNOPSIS
  *    cfun_compile - return compiled regex pattern or nil
  *    cfun_match   - return Janet array of strings matching pattern
  *    cfun_replace - returns Janet buffer, replacing matched string
  *
- * 	DESCRIPTION
+ *  DESCRIPTION
+ *    A set of Janet wrappers for the POSIX regex functions. Provides
+ *    compilation of extended RE patterns and the use of such patterns
+ *    to match or replace strings in a body of text.
  *
- *
- * 	NOTES
- *
- *
- * 	MODIFICATION HISTORY
- * 	Mnemonic	Rel	Date	    Who
- * 	regex       1.0 20230416    MPW
- * 		Written.
+ *  NOTES
+ *    Supports up to 10 captured patterns.
  *
  */
 
@@ -29,7 +26,6 @@ enum {
     RE_NMATCH = 10,
     RE_ERRSIZE = 128
 };
-
 
 typedef struct {
     regex_t* regex;
@@ -83,7 +79,6 @@ regex_error(int errcode, regex_t* re) {
 
 static Janet
 cfun_compile(int32_t argc, Janet* argv) {
-    regex_t* regex_buf;
     Pattern* p;
     const char* re;
     int status = 0;
@@ -101,10 +96,10 @@ cfun_compile(int32_t argc, Janet* argv) {
     }
 
     p = (Pattern *) janet_abstract(&regex_type, sizeof(Pattern));
-    regex_buf = (regex_t *) malloc(sizeof(regex_t));
-    p->regex = regex_buf;
-    status = regcomp(regex_buf, re, REG_EXTENDED);
-    if (status) regex_error(status, regex_buf);
+    p->regex = (regex_t *) malloc(sizeof(regex_t));
+    if (!p->regex) janet_panic("regex malloc failed");
+    status = regcomp(p->regex, re, REG_EXTENDED);
+    if (status) regex_error(status, p->regex);
     return janet_wrap_abstract(p);
 }
 
