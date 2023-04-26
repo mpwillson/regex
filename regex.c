@@ -65,7 +65,7 @@ regex_gc(void *data, size_t len) {
 static void
 regex_tostring(void* data, JanetBuffer* buffer) {
     char str[32];
-    sprintf(str, "%lx", (uint64_t) data);
+    sprintf(str, "0x%lx", (uint64_t) data);
     janet_buffer_push_cstring(buffer, str);
 }
 
