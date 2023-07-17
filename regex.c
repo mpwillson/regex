@@ -24,7 +24,8 @@
 
 enum {
     RE_NMATCH = 10,
-    RE_ERRSIZE = 128
+    RE_ERRSIZE = 128,
+    BUFSIZE = 128
 };
 
 typedef struct {
@@ -51,6 +52,26 @@ static const JanetAbstractType regex_type = {
   .length = NULL,
   .bytes = NULL,
 };
+
+static char*
+buf_or_str(Janet* argv, int n) {
+    char* str;
+    int len;
+
+    if (janet_checktype(argv[n], JANET_BUFFER)) {
+        JanetBuffer* b = janet_getbuffer(argv, n);
+        len = (b->count > BUFSIZE?BUFSIZE:b->count);
+        str = (char *) janet_smalloc(len+1);
+        strncpy(str, b->data, len);
+    }
+    else if (janet_checktype(argv[n], JANET_STRING)) {
+        str = (char *) janet_getcstring(argv, n);
+    }
+    else {
+        janet_panicf("arg %d: expected (buffer|string)", n);
+    }
+    return str;
+}
 
 /* Does gc also need to explicitly free Pattern?
  * Other examples I've looked at don't do that.  */
@@ -84,17 +105,7 @@ cfun_compile(int32_t argc, Janet* argv) {
     int status = 0;
 
     janet_fixarity(argc, 1);
-    if (janet_checktype(argv[0], JANET_BUFFER)) {
-        JanetBuffer* b = janet_getbuffer(argv, 0);
-        re = (const char *) b->data;
-    }
-    else if (janet_checktype(argv[0], JANET_STRING)) {
-        re = janet_getcstring(argv, 0);
-    }
-    else {
-        janet_panic("arg 0: expected buffer or string");
-    }
-
+    re = buf_or_str(argv, 0);
     p = (Pattern *) janet_abstract(&regex_type, sizeof(Pattern));
     p->regex = (regex_t *) malloc(sizeof(regex_t));
     if (!p->regex) janet_panic("regex malloc failed");
@@ -112,7 +123,7 @@ janet_str(const char* string, regmatch_t* pm) {
     return janet_wrap_string(newbuf);
 }
 
-/* Validate adn return arguments for match and replace */
+/* Validate  arguments for match and replace */
 static void
 validate_args(int32_t argc, Janet* argv, Pattern** p, const char** text,
               const char** replace) {
