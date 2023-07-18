@@ -24,8 +24,7 @@
 
 enum {
     RE_NMATCH = 10,
-    RE_ERRSIZE = 128,
-    BUFSIZE = 128
+    RE_ERRSIZE = 128
 };
 
 typedef struct {
@@ -60,9 +59,10 @@ buf_or_str(Janet* argv, int n) {
 
     if (janet_checktype(argv[n], JANET_BUFFER)) {
         JanetBuffer* b = janet_getbuffer(argv, n);
-        len = (b->count > BUFSIZE?BUFSIZE:b->count);
-        str = (char *) janet_smalloc(len+1);
-        strncpy(str, b->data, len);
+        str = (char *) janet_smalloc(b->count+1);
+        if (!str) janet_panic("unable to allocate memory");
+        strcpy(str, b->data);
+        str[b->count] = '\0';
     }
     else if (janet_checktype(argv[n], JANET_STRING)) {
         str = (char *) janet_getcstring(argv, n);
@@ -132,27 +132,9 @@ validate_args(int32_t argc, Janet* argv, Pattern** p, const char** text,
     }
 
     *p = (Pattern *) janet_getabstract(argv, 0, &regex_type);
-    if (janet_checktype(argv[1], JANET_BUFFER)) {
-        JanetBuffer* b = janet_getbuffer(argv, 1);
-        *text = (const char *) b->data;
-    }
-    else if (janet_checktype(argv[1], JANET_STRING)) {
-        *text = janet_getcstring(argv, 1);
-    }
-    else {
-        janet_panic("arg 1: expected buffer or string");
-    }
+    *text = buf_or_str(argv, 1);
     if (argc >= 3 && replace) {
-        if (janet_checktype(argv[2], JANET_BUFFER)) {
-            JanetBuffer* b = janet_getbuffer(argv, 2);
-            *replace = (const char *) b->data;
-        }
-        else if (janet_checktype(argv[2], JANET_STRING)) {
-            *replace = janet_getcstring(argv, 2);
-        }
-        else {
-            janet_panic("arg 2: expected buffer or string");
-        }
+        *replace = buf_or_str(argv, 2);
     }
     return;
 }

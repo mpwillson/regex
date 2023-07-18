@@ -20,16 +20,16 @@
 (assert (deep= (regex/replace p "aaa" "%%1") @"%1"))
 
 (def p (regex/compile "aa"))
-(assert (deep= (regex/replace p "aabbaaccaa" "zz" :all) @"zzbbzzcczz"))
-(assert (deep= (regex/replace p "aabbaaccaa" "zz") @"zzbbaaccaa"))
-(assert (deep= (regex/replace p "aabbaaccaa" "zz" nil) @"zzbbaaccaa"))
+(assert (deep= (regex/replace p @"aabbaaccaa" "zz" :all) @"zzbbzzcczz"))
+(assert (deep= (regex/replace p @"aabbaaccaa" "zz") @"zzbbaaccaa"))
+(assert (deep= (regex/replace p @"aabbaaccaa" "zz" nil) @"zzbbaaccaa"))
 
 (def p (regex/compile "a[bc]a"))
-(assert (deep= (regex/replace p "aaa aba aca aza aca" "zz" :all)
+(assert (deep= (regex/replace p "aaa aba aca aza aca" @"zz" :all)
                @"aaa zz zz aza zz"))
 (def p (regex/compile "a([bc])a"))
 (assert (deep= (regex/replace p "aaa aba aca aza aca" "%1%1%1" :all)
                @"aaa bbb ccc aza ccc"))
 
 (def p (regex/compile "a(bc[a-m]).*k(.*)ka"))
-(assert (deep= (regex/replace p "abcda abcka abcka" "%1:%2") @"bcd:a abc"))
+(assert (deep= (regex/replace p "abcda abcka abcka" @"%1:%2") @"bcd:a abc"))
